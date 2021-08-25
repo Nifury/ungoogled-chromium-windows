@@ -1,10 +1,15 @@
-chrome_pgo_phase=0
+blink_symbol_level=0
+dcheck_always_on=false
 enable_swiftshader=false
 ffmpeg_branding="Chrome"
+is_chrome_branded=false
 is_clang=true
 is_component_build=false
 is_debug=false
+is_official_build=false
 proprietary_codecs=true
+symbol_level=0
 target_cpu="x64"
 use_gnome_keyring=false
 use_sysroot=false
+
