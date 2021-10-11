@@ -13,8 +13,6 @@ To download the PGO profile for Win64:
 ```cmd
 # From a cmd.exe shell, run the command gclient (without arguments).
 # On first run, gclient will install all the Windows-specific bits needed to work with the code, including msysgit and python.
-cd path\to\depot_tools
-gclient.bat
 set PATH=path\to\depot_tools;%PATH%
 python3 build/src/tools/update_pgo_profiles.py --target=win64 update --gs-url-base=chromium-optimization-profiles/pgo_profiles
 ```
