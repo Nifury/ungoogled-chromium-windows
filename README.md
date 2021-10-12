@@ -29,6 +29,17 @@ Google only supports [Windows 7 x64 or newer](https://chromium.googlesource.com/
 
 NOTE: The default configuration will build 64-bit binaries for maximum security (TODO: Link some explanation). This can be changed to 32-bit by setting `target_cpu` to `"x86"` in `flags.windows.gn`.
 
+## Version Tips
+
+- python
+  - 3.9.7 (supported)
+  - 3.10.0 (unsupported)
+- windows sdk
+  - 10.0.19041.0 (supported)
+  - 10.0.20348.0 (unsupported)
+  - 10.0.22000.0 (unsupported)
+
+
 ### Setting up the build environment
 
 **IMPORTANT**: Please setup only what is referenced below. Do NOT setup other Chromium compilation tools like `depot_tools`, since we have a custom build process which avoids using Google's pre-built binaries.
