@@ -10,3 +10,4 @@ use_gnome_keyring=false
 use_sysroot=false
 dcheck_always_on=false
 symbol_level=0
+skip_archive_compression=false
