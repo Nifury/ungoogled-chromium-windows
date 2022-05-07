@@ -121,6 +121,10 @@ def main():
         '--ci',
         action='store_true'
     )
+    parser.add_argument(
+        '--x86',
+        action='store_true'
+    )
     args = parser.parse_args()
 
     # Set common variables
@@ -194,7 +198,10 @@ def main():
         (source_tree / 'out/Default').mkdir(parents=True)
         gn_flags = (_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn').read_text(encoding=ENCODING)
         gn_flags += '\n'
-        gn_flags += (_ROOT_DIR / 'flags.windows.gn').read_text(encoding=ENCODING)
+        windows_flags = (_ROOT_DIR / 'flags.windows.gn').read_text(encoding=ENCODING)
+        if args.x86:
+            windows_flags = windows_flags.replace('x64', x86)
+        gn_flags += windows_flags
         (source_tree / 'out/Default/args.gn').write_text(gn_flags, encoding=ENCODING)
 
     # Enter source tree to run build commands
