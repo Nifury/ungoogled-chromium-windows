@@ -17,7 +17,7 @@ async function run() {
     }
 
     const artifactClient = artifact.create();
-    const artifactName = x86 ? 'build-artifact-x86' else 'build-artifact';
+    const artifactName = x86 ? 'build-artifact-x86' : 'build-artifact';
 
     if (from_artifact) {
         await artifactClient.downloadArtifact(artifactName, 'C:\\ungoogled-chromium-windows\\build');
@@ -38,12 +38,14 @@ async function run() {
         const globber = await glob.create('C:\\ungoogled-chromium-windows\\build\\ungoogled-chromium*',
             {matchDirectories: false});
         let packageList = await globber.glob();
-        packageList = packageList.map(x => {
+        packageList = await Promise.all(packageList.map(async x => {
             const part1 = x.substr(0, x.length - 4);
             const part2 = x86 ? '_x86' : '_x64';
             const part3 = x.substr(x.length - 4, 4);
-            return part1 + part2 + part3
-        });
+            const newPath = part1 + part2 + part3;
+            await io.mv(x, newPath);
+            return newPath;
+        }));
         await artifactClient.uploadArtifact(x86 ? 'chromium-x86' : 'chromium', packageList,
             'C:\\ungoogled-chromium-windows\\build', {retentionDays: 1});
     } else {
