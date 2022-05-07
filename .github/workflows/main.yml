@@ -5,10 +5,10 @@ on:
       - '*'
 jobs:
   build-1:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -26,10 +26,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-2:
     needs: build-1
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -47,10 +47,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-3:
     needs: build-2
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -68,10 +68,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-4:
     needs: build-3
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -89,10 +89,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-5:
     needs: build-4
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -110,10 +110,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-6:
     needs: build-5
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -129,27 +129,12 @@ jobs:
           from_artifact: true
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
-  publish-release:
-    needs: build-6
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download package
-        uses: actions/download-artifact@v2
-        if: ${{ join(needs.*.outputs.finished) == 'true' }}
-        with:
-          name: chromium
-      - name: Publish release
-        uses: softprops/action-gh-release@v1
-        if: ${{ join(needs.*.outputs.finished) == 'true' }}
-        with:
-          files: |
-            ungoogled-chromium*
 
   build-x86-1:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -168,10 +153,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-x86-2:
     needs: build-x86-1
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -190,10 +175,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-x86-3:
     needs: build-x86-2
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -212,10 +197,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-x86-4:
     needs: build-x86-3
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -234,10 +219,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-x86-5:
     needs: build-x86-4
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -256,10 +241,10 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-x86-6:
     needs: build-x86-5
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Init
@@ -276,18 +261,44 @@ jobs:
           x86: true
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
-  publish-x86-release:
-    needs: build-x86-6
+  publish-release:
+    needs: [build-6, build-x86-6]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download package
         uses: actions/download-artifact@v2
-        if: ${{ join(needs.*.outputs.finished) == 'true' }}
+        if: ${{ needs.build-6.outputs.finished == 'true' }}
+        with:
+          name: chromium
+      - name: Download x86 package
+        uses: actions/download-artifact@v2
+        if: ${{ needs.build-x86-6.outputs.finished == 'true' }}
         with:
           name: chromium-x86
+      - name: Checkout release repository
+        uses: actions/checkout@v3
+        with:
+          repository: Nifury/ungoogled-chromium-binaries
+          path: binary_release
+          token: ${{ secrets.PAT }}
+      - name: Get tag name from ref
+        shell: bash
+        run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+        id: get_tag
+      - name: Create tag in release repository
+        run: |
+          cd ${{github.workspace}}/binary_release
+          git tag ${{ steps.get_tag.outputs.tag }}
+          git push --tags --porcelain
       - name: Publish release
         uses: softprops/action-gh-release@v1
-        if: ${{ join(needs.*.outputs.finished) == 'true' }}
         with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          draft: true
+          fail_on_unmatched_files: true
+          repository: Nifury/ungoogled-chromium-binaries
+          token: ${{ secrets.PAT }}
           files: |
             ungoogled-chromium*
