@@ -49,6 +49,7 @@ async function run() {
         await artifactClient.uploadArtifact(x86 ? 'chromium-x86' : 'chromium', packageList,
             'C:\\ungoogled-chromium-windows\\build', {retentionDays: 1});
     } else {
+        await new Promise(r => setTimeout(r, 5000));
         await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
             'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
         await artifactClient.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
