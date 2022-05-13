@@ -9,6 +9,7 @@ ungoogled-chromium build script for Microsoft Windows
 """
 
 import sys
+import time
 
 if sys.version_info.major < 3 or sys.version_info.minor < 6:
     raise RuntimeError('Python 3.6+ is required for this script. You have: {}.{}'.format(
@@ -85,7 +86,18 @@ def _run_build_process_timeout(*args, timeout):
         try:
             proc.wait(timeout)
         except subprocess.TimeoutExpired:
-            ctypes.windll.kernel32.GenerateConsoleCtrlEvent(0, 0)
+            print('Sending keyboard interrupt')
+            for _ in range(3):
+                try:
+                    ctypes.windll.kernel32.GenerateConsoleCtrlEvent(0, 0)
+                except KeyboardInterrupt:
+                    pass
+                time.sleep(1)
+            try:
+                proc.wait(10)
+            except:
+                proc.kill()
+            raise KeyboardInterrupt
 
 
 def _make_tmp_paths():
@@ -218,7 +230,7 @@ def main():
     # Run ninja
     if args.ci:
         _run_build_process_timeout('third_party\\ninja\\ninja.exe', '-C', 'out\\Default', 'chrome',
-                                   'chromedriver', 'mini_installer', timeout=4*60*60)
+                                   'chromedriver', 'mini_installer', timeout=4.5*60*60)
         # package
         os.chdir(_ROOT_DIR)
         subprocess.run([sys.executable, 'package.py'])
