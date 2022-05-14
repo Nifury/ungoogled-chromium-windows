@@ -80,7 +80,7 @@ def _run_build_process_timeout(*args, timeout):
     cmd_input.append('set DEPOT_TOOLS_WIN_TOOLCHAIN=0')
     cmd_input.append(' '.join(map('"{}"'.format, args)))
     cmd_input.append('exit\n')
-    with subprocess.Popen(('cmd.exe', '/k'), encoding=ENCODING, stdin=subprocess.PIPE) as proc:
+    with subprocess.Popen(('cmd.exe', '/k'), encoding=ENCODING, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP) as proc:
         proc.stdin.write('\n'.join(cmd_input))
         proc.stdin.close()
         try:
@@ -88,10 +88,7 @@ def _run_build_process_timeout(*args, timeout):
         except subprocess.TimeoutExpired:
             print('Sending keyboard interrupt')
             for _ in range(3):
-                try:
-                    ctypes.windll.kernel32.GenerateConsoleCtrlEvent(0, 0)
-                except KeyboardInterrupt:
-                    pass
+                ctypes.windll.kernel32.GenerateConsoleCtrlEvent(1, proc.pid)
                 time.sleep(1)
             try:
                 proc.wait(10)
