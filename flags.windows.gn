@@ -10,3 +10,6 @@ target_cpu="x64"
 use_gnome_keyring=false
 use_sysroot=false
 dcheck_always_on=false
+blink_symbol_level=0
+v8_symbol_level=0
+symbol_level=0
