@@ -29,10 +29,6 @@ async function run() {
     const args = ['build.py', '--ci']
     if (x86)
         args.push('--x86')
-    await exec.exec('python', ['-m', 'pip', 'install', 'httplib2'], {
-        cwd: 'C:\\ungoogled-chromium-windows',
-        ignoreReturnCode: true
-    });
     const retCode = await exec.exec('python', args, {
         cwd: 'C:\\ungoogled-chromium-windows',
         ignoreReturnCode: true
@@ -43,39 +39,21 @@ async function run() {
             {matchDirectories: false});
         let packageList = await globber.glob();
         packageList = await Promise.all(packageList.map(async x => {
-            const part1 = x.substring(0, x.length - 4);
+            const part1 = x.substr(0, x.length - 4);
             const part2 = x86 ? '_x86' : '_x64';
-            const part3 = x.substring(x.length - 4, x.length);
+            const part3 = x.substr(x.length - 4, 4);
             const newPath = part1 + part2 + part3;
             await io.mv(x, newPath);
             return newPath;
         }));
-        for (let i = 0; i < 5; ++i) {
-            try {
-                await artifactClient.uploadArtifact(x86 ? 'chromium-x86' : 'chromium', packageList,
-                    'C:\\ungoogled-chromium-windows\\build', {retentionDays: 3});
-                break;
-            } catch (e) {
-                console.error(`Upload artifact failed: ${e}`);
-                // Wait 10 seconds between the attempts
-                await new Promise(r => setTimeout(r, 10000));
-            }
-        }
+        await artifactClient.uploadArtifact(x86 ? 'chromium-x86' : 'chromium', packageList,
+            'C:\\ungoogled-chromium-windows\\build', {retentionDays: 1});
     } else {
         await new Promise(r => setTimeout(r, 5000));
         await exec.exec('7z', ['a', '-tzip', 'C:\\ungoogled-chromium-windows\\artifacts.zip',
             'C:\\ungoogled-chromium-windows\\build\\src', '-mx=3', '-mtc=on'], {ignoreReturnCode: true});
-        for (let i = 0; i < 5; ++i) {
-            try {
-                await artifactClient.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
-                    'C:\\ungoogled-chromium-windows', {retentionDays: 3});
-                break;
-            } catch (e) {
-                console.error(`Upload artifact failed: ${e}`);
-                // Wait 10 seconds between the attempts
-                await new Promise(r => setTimeout(r, 10000));
-            }
-        }
+        await artifactClient.uploadArtifact(artifactName, ['C:\\ungoogled-chromium-windows\\artifacts.zip'],
+            'C:\\ungoogled-chromium-windows', {retentionDays: 1});
         core.setOutput('finished', false);
     }
 }
