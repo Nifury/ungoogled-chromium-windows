@@ -214,6 +214,7 @@ def main():
     input("Apply patch, PGO, and download LLVM.\nPress Enter to continue...")
 
     # Check if rust-toolchain folder has been populated
+    HOST_CPU_IS_64BIT = sys.maxsize > 2**32
     RUST_DIR_DST = source_tree / 'third_party' / 'rust-toolchain'
     RUST_DIR_SRC64 = source_tree / 'third_party' / 'rust-toolchain-x64'
     RUST_DIR_SRC86 = source_tree / 'third_party' / 'rust-toolchain-x86'
@@ -226,8 +227,8 @@ def main():
         for rust_dir_src in [RUST_DIR_SRC64, RUST_DIR_SRC86]:
             # Loop over all dirs to copy
             for dir_to_copy in DIRS_TO_COPY:
-                # Only copy bin folder for target architecture
-                if (dir_to_copy == 'bin') and (rust_dir_src == RUST_DIR_SRC86):
+                # Copy bin folder for host architecture
+                if (dir_to_copy == 'bin') and (HOST_CPU_IS_64BIT != (rust_dir_src == RUST_DIR_SRC64)):
                     continue
 
                 # Create target dir
@@ -245,7 +246,7 @@ def main():
 
         # Generate version file
         with open(RUST_FLAG_FILE, 'w') as f:
-            f.write('rustc 1.78.0-nightly (a84bb95a1 2024-02-13)')
+            f.write('rustc 1.78.0-nightly (bb594538f 2024-02-20)')
             f.write('\n')
 
     # Output args.gn
