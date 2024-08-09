@@ -1,0 +1,15 @@
+--- a/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
++++ b/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
+@@ -156,11 +156,9 @@ uint64_t AllOriginTypeMask() {
+ uint64_t AllRemoveMask() {
+   return content::BrowsingDataRemover::DATA_TYPE_CACHE |
+          content::BrowsingDataRemover::DATA_TYPE_DOWNLOADS |
+-         chrome_browsing_data_remover::DATA_TYPE_CONTENT_SETTINGS |
+          chrome_browsing_data_remover::DATA_TYPE_FORM_DATA |
+          chrome_browsing_data_remover::DATA_TYPE_HISTORY |
+-         chrome_browsing_data_remover::DATA_TYPE_PASSWORDS |
+-         chrome_browsing_data_remover::DATA_TYPE_SITE_DATA;
++         chrome_browsing_data_remover::DATA_TYPE_PASSWORDS;
+ }
+ 
+ uint64_t GetOriginTypeMask(const base::Value::List& data_types) {
