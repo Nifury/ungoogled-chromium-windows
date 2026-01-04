@@ -124,11 +124,6 @@ def main():
         help=('Command or path to WinRAR\'s "winrar.exe" binary. If "_use_registry" is '
               'specified, determine the path from the registry. Default: %(default)s'))
     parser.add_argument(
-        '-j',
-        type=int,
-        dest='thread_count',
-        help=('Number of CPU threads to use for compiling'))
-    parser.add_argument(
         '--ci',
         action='store_true'
     )
@@ -221,12 +216,7 @@ def main():
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
         # Then Windows-specific patches
-        patches.apply_patches(
-            patches.generate_patches_from_series(_ROOT_DIR / 'patches', resolve=True),
-            source_tree,
-            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
-        )
-
+        input('Apply patch now')
         # Substitute domains
         domain_substitution_list = (_ROOT_DIR / 'ungoogled-chromium' / 'domain_substitution.list') if args.tarball else (_ROOT_DIR  / 'domain_substitution.list')
         domain_substitution.apply_substitution(
@@ -305,25 +295,16 @@ def main():
             sys.executable,
             'tools\\rust\\build_bindgen.py', '--skip-test')
 
-    # Ninja commandline
-    ninja_commandline = ['third_party\\ninja\\ninja.exe']
-    if args.thread_count is not None:
-        ninja_commandline.append('-j')
-        ninja_commandline.append(args.thread_count)
-    ninja_commandline.append('-C')
-    ninja_commandline.append('out\\Default')
-    ninja_commandline.append('chrome')
-    ninja_commandline.append('chromedriver')
-    ninja_commandline.append('mini_installer')
-
     # Run ninja
     if args.ci:
-        _run_build_process_timeout(*ninja_commandline, timeout=3.5*60*60)
+        _run_build_process_timeout('third_party\\ninja\\ninja.exe', '-C', 'out\\Default', 'chrome',
+                                   'chromedriver', 'mini_installer', timeout=3.5*60*60)
         # package
         os.chdir(_ROOT_DIR)
         subprocess.run([sys.executable, 'package.py'])
     else:
-        _run_build_process(*ninja_commandline)
+        _run_build_process('third_party\\ninja\\ninja.exe', '-C', 'out\\Default', 'chrome',
+                           'chromedriver', 'mini_installer')
 
 
 if __name__ == '__main__':
