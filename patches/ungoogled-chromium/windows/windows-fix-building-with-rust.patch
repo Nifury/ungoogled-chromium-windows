@@ -188,7 +188,7 @@
          os.path.join(install_dir, 'bin'),
 --- a/tools/rust/host_tools.py
 +++ b/tools/rust/host_tools.py
-@@ -26,7 +26,7 @@
+@@ -26,7 +26,7 @@ from build_rust import (
      RUST_HOST_LLVM_INSTALL_DIR,
      RustTargetTriple,
  )
@@ -197,7 +197,7 @@
  
  # Get variables and helpers from Clang update script
  sys.path.append(
-@@ -65,7 +65,7 @@
+@@ -65,7 +65,7 @@ def GetHostCcTools():
      On Windows the MSVC-style `clang-cl` driver is both the C and the C++
      compiler.
      """
@@ -206,7 +206,7 @@
      if sys.platform == 'win32':
          clang_cl = os.path.join(bin_dir, 'clang-cl.exe')
          return clang_cl, clang_cl, os.path.join(bin_dir, 'llvm-lib.exe')
-@@ -91,7 +91,7 @@
+@@ -91,7 +91,7 @@ def GetHostLinker():
      Windows uses `lld-link` for MSVC compat.  Otherwise, we use `lld` via
      `clang` (see `GetHostLinkArgs`).
      """
