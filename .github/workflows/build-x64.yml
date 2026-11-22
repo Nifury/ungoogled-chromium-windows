@@ -1,12 +1,11 @@
-name: build-x64
+name: build-x64-ci-verify
 on:
-  workflow_dispatch:
   push:
-    tags:
-      - '*'
+    branches:
+      - ci-verify
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-x64-${{ github.ref }}
@@ -14,4 +13,78 @@ concurrency:
 
 jobs:
   build:
-    uses: ./.github/workflows/reusable-build.yml
+    runs-on: [self-hosted, pve-win]
+    timeout-minutes: 4320
+    env:
+      BUILD_ROOT: 'C:\ungoogled-chromium-windows'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Prepare build directory
+        shell: pwsh
+        run: Copy-Item -Path . -Destination $env:BUILD_ROOT -Recurse
+
+      - name: Install Windows SDK 10.0.28000.0
+        shell: pwsh
+        run: |
+          if (Test-Path 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0') {
+            Write-Host 'SDK 10.0.28000.0 already installed.'
+            exit 0
+          }
+          $installer = "$env:TEMP\winsdksetup.exe"
+          Invoke-WebRequest -Uri 'https://download.microsoft.com/download/38ab8f6d-3676-4860-ae84-3361308b9d7f/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe' -OutFile $installer
+          $features = '/features OptionId.DesktopCPPx64 OptionId.DesktopCPPx86 OptionId.DesktopCPPArm64 OptionId.WindowsDesktopDebuggers OptionId.UWPCPP OptionId.SigningTools /q /norestart /ceip off'
+          $proc = Start-Process -FilePath $installer -ArgumentList $features -PassThru -Wait
+          if ($proc.ExitCode -ne 0) { throw "winsdksetup.exe failed with code $($proc.ExitCode)" }
+          if (-not (Test-Path 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0')) {
+            throw 'SDK 10.0.28000.0 not found after install.'
+          }
+
+      - name: Install Python dependencies
+        shell: pwsh
+        working-directory: ${{ env.BUILD_ROOT }}
+        run: python -m pip install httplib2==0.22.0 clang==21.1.7
+
+      - name: Build
+        shell: pwsh
+        working-directory: ${{ env.BUILD_ROOT }}
+        run: |
+          python build.py
+          if ($LASTEXITCODE -ne 0) { throw "build.py failed with exit code $LASTEXITCODE" }
+
+      - name: Package
+        shell: pwsh
+        working-directory: ${{ env.BUILD_ROOT }}
+        run: |
+          python package.py --cpu-arch 64bit
+          if ($LASTEXITCODE -ne 0) { throw "package.py failed with exit code $LASTEXITCODE" }
+
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          $chromium = (Get-Content ungoogled-chromium\chromium_version.txt -Raw).Trim()
+          $ucRev = (Get-Content ungoogled-chromium\revision.txt -Raw).Trim()
+          $pkgRev = (Get-Content revision.txt -Raw).Trim()
+          $sha = "${{ github.sha }}".Substring(0, 7)
+          "tag=ci-verify-$chromium-$ucRev.$pkgRev-$sha" >> $env:GITHUB_OUTPUT
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.tag.outputs.tag }}
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            ${{ env.BUILD_ROOT }}\build\ungoogled-chromium*
